@@ -1,8 +1,8 @@
+
 import tkinter
 from tkinter import scrolledtext
 from tkinter.constants import COMMAND, S
 from tkinter import *
-from tkinter import filedialog , messagebox 
 from typing import Text
 from threading import Thread
 from timer import RepeatedTimer
@@ -14,6 +14,8 @@ import os
 import subprocess
 
 # GUI part
+
+UI_LIST = None
 
 def setAddress():
     list_file = []                                          #파일 목록 담을 리스트 생성
@@ -39,6 +41,21 @@ def setAddress():
 
         return True
 
+
+def openDownloader2():
+    currentDir = os.path.dirname(os.path.realpath(__file__))
+    optionFile = currentDir + "/option.ini"
+    if os.path.isfile(optionFile) == True:
+        f = open(optionFile,'r')
+        targetFile = f.readline()
+        print('"'+targetFile+'"')
+        os.startfile(targetFile)
+        #os.system(targetFile)
+
+        return True
+    else:
+        tkinter.messagebox.showwarning("경고", "아무런 파일이 세팅되어있지 않습니다.")    #파일 선택 안했을 때 메세지 출력
+        return False
 def openDownloader():
     currentDir = os.path.dirname(os.path.realpath(__file__))
     optionFile = currentDir + "/option.ini"
@@ -46,13 +63,16 @@ def openDownloader():
         f = open(optionFile,'r')
         targetFile = f.readline()
         print('"'+targetFile+'"')
-        subprocess.call([targetFile])
+        subprocess.Popen([targetFile])
         #os.system(targetFile)
 
         return True
     else:
         tkinter.messagebox.showwarning("경고", "아무런 파일이 세팅되어있지 않습니다.")    #파일 선택 안했을 때 메세지 출력
         return False
+
+def openDownloadFolder():
+    pass
 
 def addMenu(root,UI_LIST):
     menubar = tkinter.Menu(root)
@@ -62,8 +82,10 @@ def addMenu(root,UI_LIST):
     filemenu.add_command(label="Save")
     #filemenu.add_command(label="Exit",command=on_closing)
 
-    menubar.add_cascade(label="open downloader", command = lambda: openDownloader())
+    menubar.add_cascade(label="run downloader", command = lambda: openDownloader())
+    menubar.add_cascade(label="open download folder", command = lambda: openDownloader2())
     menubar.add_cascade(label="setting downloader", command = lambda: setAddress())
+    
     #menubar.add_cascade(label="edit correct list", command = lambda: editCorrectList(UI_LIST))
     root.config(menu=menubar)
     return [(filemenu,"fileMenu")]
@@ -89,14 +111,23 @@ def nextAddress() :
         if(AList[0][-2:] == "#1"):
             cb.copy(AList[0])
             del AList[0]
+            label = getUIWithName(UI_LIST, "restAddressNumLabel")
+            label['text'] = "남은 작업량 : %d" % len(AList)
+            
         else:
             del AList[0]
             nextAddress()
         
     else:
         cb.copy("")
+        label = getUIWithName(UI_LIST, "restAddressNumLabel")
+        label['text'] = "남은 작업량 : %d" % len(AList)
         
-
+def customCopyAddress():
+    copyAddress.copyAddress()
+    label = getUIWithName(UI_LIST, "restAddressNumLabel")
+    label['text'] = "남은 작업량 : %d" % len(copyAddress.addressList)
+    pass
 
 def addButtons(root):
     buttonFrame = tkinter.Frame(root)
@@ -112,7 +143,7 @@ def addButtons(root):
 
 
     copyAddressButton = tkinter.Button(buttonFrame, width=w,height= h,bg='sky blue', repeatdelay=1000, repeatinterval=100, font=("Helvetica", font_size))
-    copyAddressButton.config(text= "Copy address", command=copyAddress.copyAddress)
+    copyAddressButton.config(text= "Copy address", command= customCopyAddress)
     copyAddressButton.pack(side="left",padx=50, pady=25)
 
 
@@ -146,6 +177,11 @@ def addNumberInputBox(root):
 
     return [(xInput,"xInput"),(yInput,"yInput"),(currentMouseX,"currentMouseX"),(currentMouseY,"currentMouseY")]   
 
+def addrestAddressNumLabel(root):
+    
+    restAddressNumLabel = tkinter.Label(root,text = "남은 작업량 : 0 ")
+    restAddressNumLabel.pack(side="top")
+    return [(restAddressNumLabel,"restAddressNumLabel")]
 
 def hello(name):
     print ("Hello %s!" % name)
@@ -177,15 +213,14 @@ if __name__ == "__main__":
 
     UI_LIST = []
     #UI_LIST = UI_LIST + addNumberInputBox(root)
+    UI_LIST = UI_LIST + addrestAddressNumLabel(root)
     UI_LIST = UI_LIST + addButtons(root)
     UI_LIST = UI_LIST + addMenu(root,UI_LIST)
+    
     print(UI_LIST)
 
-    
-        
-    #rt = RepeatedTimer(0.1, getMousePlace, UI_LIST) # it auto-starts, no need of rt.start()
+
     root.mainloop()
 
-    #rt.stop()
     print("TEST END")
     exit(0)
